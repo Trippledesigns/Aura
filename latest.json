@@ -1,0 +1,11 @@
+{
+  "version": "0.1.0",
+  "notes": "Initial release of Aura\n🎮 Multi-platform game library\n🎨 5 themes\n🧠 Mood picker\n🔍 Search bar\n📊 Library stats & shame score\n🕐 Recent tab\n🔔 System tray",
+  "pub_date": "2026-03-06T00:00:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "",
+      "url": "https://github.com/Trippledesigns/Aura/releases/latest/download/aura_0.1.0_x64-setup.exe"
+    }
+  }
+}
