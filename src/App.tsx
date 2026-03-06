@@ -18,8 +18,6 @@ import Onboarding from "./Onboarding";
 
 import UpdateModal from "./UpdateModal";
 
-import { checkForUpdates } from "./updater";
-
 import { invoke } from "@tauri-apps/api/core";
 
 import { listen } from "@tauri-apps/api/event";
