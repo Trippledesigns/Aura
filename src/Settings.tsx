@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { Game } from "./GameCard";
 import { Folder, Trash2, Check } from "lucide-react";
+import { checkForUpdates, installUpdate } from "./updater";
 
 const THEMES = [
   { id: "midnight", name: "Midnight", emoji: "🌑", bg: "#0a0a14", accent: "#a78bfa" },
@@ -20,6 +22,27 @@ interface SettingsProps {
 }
 
 function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRemoveFolder }: SettingsProps) {
+  // Update state management
+  const [updateStatus, setUpdateStatus] = useState<"idle" | "checking" | "available" | "latest">("idle");
+  const [updateVersion, setUpdateVersion] = useState<string>("");
+  const [updateNotes, setUpdateNotes] = useState<string>("");
+
+  const handleCheckUpdates = async () => {
+    setUpdateStatus("checking");
+    const update = await checkForUpdates();
+    if (update) {
+      setUpdateStatus("available");
+      setUpdateVersion(update.version);
+      setUpdateNotes(update.notes);
+    } else {
+      setUpdateStatus("latest");
+    }
+  };
+
+  const handleInstallUpdate = async () => {
+    await installUpdate();
+  };
+
   const handleAddFolder = async () => {
     const folder = await open({
       directory: true,
@@ -140,6 +163,57 @@ function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRem
         )}
       </div>
 
+      {/* Update Section */}
+      <div className="settings-section">
+        <div className="settings-section-header">
+          <h2 className="settings-section-title">Updates</h2>
+        </div>
+        <div className="update-section">
+          <div className="update-info">
+            <p className="update-version-label">Current Version</p>
+            <p className="update-version">v0.2.5</p>
+          </div>
+
+          {updateStatus === "idle" && (
+            <button className="check-update-btn" onClick={handleCheckUpdates}>
+              <Check size={14} />
+              Check for Updates
+            </button>
+          )}
+
+          {updateStatus === "checking" && (
+            <button className="check-update-btn" disabled>
+              <Check size={14} />
+              Checking...
+            </button>
+          )}
+
+          {updateStatus === "latest" && (
+            <div className="update-result">
+              <p className="update-latest">✅ You're on the latest version!</p>
+              <button className="check-update-btn" onClick={handleCheckUpdates}>
+                <Check size={14} />
+                Check Again
+              </button>
+            </div>
+          )}
+
+          {updateStatus === "available" && (
+            <div className="update-result">
+              <p className="update-available">🎉 v{updateVersion} is available!</p>
+              <div className="update-notes">
+                {updateNotes.split("\n").filter(Boolean).map((line, i) => (
+                  <p key={i} className="update-note-line">{line}</p>
+                ))}
+              </div>
+              <button className="check-update-btn accent" onClick={handleInstallUpdate}>
+                Install Update
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* About Section */}
       <div className="settings-section">
         <div className="settings-section-header">
@@ -148,7 +222,7 @@ function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRem
         <div className="about-card">
           <div className="about-logo">
             <span className="about-name">Aura</span>
-            <span className="about-version">v0.2.4</span>
+            <span className="about-version">v0.2.5</span>
           </div>
           <p className="about-tagline">"400 games. 6 launchers. Playing the same 3."</p>
           <p className="about-desc">Built by a gamer who was just really annoyed. 😄</p>

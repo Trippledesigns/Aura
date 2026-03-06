@@ -8,7 +8,6 @@ import Recent from "./Recent";
 import Stats from "./Stats";
 import Onboarding from "./Onboarding";
 import UpdateModal from "./UpdateModal";
-import { checkForUpdates } from "./updater";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -203,12 +202,6 @@ function App() {
         unlistenFn();
       }
     };
-  }, []);
-
-  useEffect(() => {
-    checkForUpdates().then((update) => {
-      if (update) setUpdateInfo(update);
-    });
   }, []);
 
   const allGames = [...steamGames, ...localGames].length > 0 
