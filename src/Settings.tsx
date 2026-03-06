@@ -148,7 +148,7 @@ function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRem
         <div className="about-card">
           <div className="about-logo">
             <span className="about-name">Aura</span>
-            <span className="about-version">v0.2.3</span>
+            <span className="about-version">v0.2.4</span>
           </div>
           <p className="about-tagline">"400 games. 6 launchers. Playing the same 3."</p>
           <p className="about-desc">Built by a gamer who was just really annoyed. 😄</p>

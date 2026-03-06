@@ -8,15 +8,20 @@ export interface ChangelogEntry {
 
 export async function checkForUpdates(): Promise<ChangelogEntry | null> {
   try {
+    console.log("Checking for updates...");
     const update = await check();
+    console.log("Update check result:", update);
     if (update?.available) {
+      console.log("Update available:", update.version);
       return {
         version: update.version,
         notes: update.body || "Bug fixes and improvements",
       };
     }
+    console.log("No update available");
     return null;
-  } catch {
+  } catch (err) {
+    console.error("Update check error:", err);
     return null;
   }
 }

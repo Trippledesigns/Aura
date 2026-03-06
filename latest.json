@@ -1,11 +1,11 @@
 {
-  "version": "0.2.3",
+  "version": "0.2.4",
   "notes": "🎮 Aura v0.2.3\n✅ Version number now displayed in Settings\n🔄 Auto updater improvements",
   "pub_date": "2026-03-06T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYW9sQUxYYzRNSUtjZ2Q3ZWtxZzQvQW1IdDRQNnNxZTB2Umd5NTBNNE10S3N1SWVIT0xYdzVqaEVDTzU0Q09WMDVsMmNkVDdOdHNXUlJQRUxETU8rblBiUFkxMEdMQkFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcyODI1MzI4CWZpbGU6YXVyYV8wLjIuM194NjQtc2V0dXAuZXhlCmpGc043WGhrS3dmaCtBZHkzSjhBWDlseWZNNi9MeTZaOWJHNE1HbEYzTENqYko0dHVLMnduR05BTXdMWkM3WUJENm1rWDdadkNValkwTkRuWVRXZUJRPT0K",
-      "url": "https://github.com/Trippledesigns/Aura/releases/latest/download/aura_0.2.3_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYW9sQUxYYzRNSUg3bDB1OEprcEVKM2w1QUZ5QlVid29iNnNoMGdCZExZRmJrc3hiTzZXTHIzMDB0bXkrOWs3R1cxL01iT0tRcW91OGQ4QmtjNmdVRDFXbTNzczZXaFFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcyODI2MzAwCWZpbGU6YXVyYV8wLjIuNF94NjQtc2V0dXAuZXhlClJpamJaM3NabWhCNjFqbGlpT20rcldJMXAvM21xWUNKbGVwSGZ3RFV3eXpYK2RyZWpHMW5vZi9pNGkvSG1lZlI0K2FYVmFnb2FTTGs1SENxcWN2TkNRPT0K",
+      "url": "https://github.com/Trippledesigns/Aura/releases/latest/download/aura_0.2.4_x64-setup.exe"
     }
   }
 }
