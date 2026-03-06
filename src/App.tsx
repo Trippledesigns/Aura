@@ -163,7 +163,6 @@ function App() {
     });
 
     loadGames();
-    addLocalFolder();
     
     // Background scanning and cache cleanup
     const interval = setInterval(() => {
@@ -182,13 +181,27 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
-    const win = getCurrentWindow();
-    const unlisten = win.onCloseRequested((event) => {
-      event.preventDefault();
-      win.hide();
-    });
+    let unlistenFn: (() => void) | null = null;
+  
+    const setup = async () => {
+      const win = getCurrentWindow();
+      console.log("Setting up close handler for window:", win);
+      
+      unlistenFn = await win.onCloseRequested((event) => {
+        console.log("Close requested event:", event);
+        event.preventDefault();
+        console.log("Prevented close, hiding window");
+        win.hide();
+      });
+    };
+  
+    setup();
+  
     return () => {
-      unlisten.then((f) => f());
+      if (unlistenFn) {
+        console.log("Cleaning up close handler");
+        unlistenFn();
+      }
     };
   }, []);
 

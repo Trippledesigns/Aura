@@ -9,6 +9,7 @@
     "opener:allow-open-url",
     "core:tray:default",
     "updater:default",
-    "process:default"
+    "process:default",
+    "core:window:allow-hide"
   ]
 }
