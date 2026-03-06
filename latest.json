@@ -1,11 +1,11 @@
 {
-  "version": "0.2.2",
-  "notes": "🎮 Aura v0.2.2\n🔍 Search bar\n📊 Library stats & shame score\n🕐 Recent tab\n🔔 System tray\n🌍 Multi-drive detection\n👁️ Auto library refresh\n🎉 Onboarding experience\n🔄 Auto updater\n✅ X button hides to tray\n✅ Fixed startup folder dialog",
+  "version": "0.2.3",
+  "notes": "🎮 Aura v0.2.3\n✅ Version number now displayed in Settings\n🔄 Auto updater improvements",
   "pub_date": "2026-03-06T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYW9sQUxYYzRNSUY5KzJTaEd4Sjkzb29iUHNLNDkzUUVwYW10ZVQwVTJLdmEvQ1FUVzJzVnowanlZYlNINXAzME1DN3hab0QrZ1F6N0swb3JOeFlqT2pNWmprUDZEdEFnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcyODI0NzExCWZpbGU6YXVyYV8wLjIuMl94NjQtc2V0dXAuZXhlCjA5YVMvSkpXL2JCeXV6S3lQT09PSGd6dUVkSWxPUEpHell1SGRXZ1NodzRrbXJaV3RsMTdQOEYzN1IwZGpQa3pKNVJCaklBd3VoQnhNNFRFdW92ZUNBPT0K",
-      "url": "https://github.com/Trippledesigns/Aura/releases/latest/download/aura_0.2.2_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYW9sQUxYYzRNSUtjZ2Q3ZWtxZzQvQW1IdDRQNnNxZTB2Umd5NTBNNE10S3N1SWVIT0xYdzVqaEVDTzU0Q09WMDVsMmNkVDdOdHNXUlJQRUxETU8rblBiUFkxMEdMQkFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcyODI1MzI4CWZpbGU6YXVyYV8wLjIuM194NjQtc2V0dXAuZXhlCmpGc043WGhrS3dmaCtBZHkzSjhBWDlseWZNNi9MeTZaOWJHNE1HbEYzTENqYko0dHVLMnduR05BTXdMWkM3WUJENm1rWDdadkNValkwTkRuWVRXZUJRPT0K",
+      "url": "https://github.com/Trippledesigns/Aura/releases/latest/download/aura_0.2.3_x64-setup.exe"
     }
   }
 }
