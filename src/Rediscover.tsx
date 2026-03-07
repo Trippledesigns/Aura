@@ -34,7 +34,6 @@ function Rediscover({ games }: RediscoverProps) {
     { label: "Long Lost", emoji: "💀", description: "Haven't played in 6+ months", game: null },
     { label: "Left Unfinished", emoji: "⏳", description: "Started but never completed", game: null },
   ]);
-  const [revealed, setRevealed] = useState(false);
   const [spinning, setSpinning] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
@@ -66,7 +65,6 @@ function Rediscover({ games }: RediscoverProps) {
             return next;
           });
           if (i === picked.length - 1) {
-            setRevealed(true);
             setIsResetting(false); // Only set false after last slot
           }
         }, 300 + i * 800); // 300ms initial delay then 800ms between each card

@@ -24,13 +24,9 @@ import UpdateModal from "./UpdateModal";
 
 import { invoke } from "@tauri-apps/api/core";
 
-import { listen } from "@tauri-apps/api/event";
-
 import { open } from "@tauri-apps/plugin-dialog";
 
 import { getCurrentWindow } from "@tauri-apps/api/window";
-
-import { metadataCache } from "./cache";
 
 import "./App.css";
 
@@ -178,151 +174,6 @@ function App() {
     });
 
   }, []);
-
-  const loadGames = async () => {
-
-    try {
-
-      const [steamRaw, epicRaw, ubisoftRaw, gogRaw] = await Promise.all([
-
-        invoke<any[]>("scan_steam_games"),
-
-        invoke<any[]>("scan_epic_games"),
-
-        invoke<any[]>("scan_ubisoft_games"),
-
-        invoke<any[]>("scan_gog_games"),
-
-      ]);
-
-
-
-      const mapGames = (games: any[], platform: string): Game[] =>
-
-        games.map((g) => ({
-
-          id: g.id,
-
-          title: g.name,
-
-          genre: "Unknown",
-
-          platform,
-
-          playtime: g.playtime,
-
-          hltb: 0,
-
-          lastPlayed: g.last_played > 0
-
-            ? new Date(g.last_played * 1000).toISOString().split("T")[0]
-
-            : null,
-
-          cover: g.cover,
-
-          launchCommand: g.launch_command,
-
-        }));
-
-
-
-      const steamGames = mapGames(steamRaw, "Steam");
-
-      const otherGames = [
-
-        ...mapGames(epicRaw, "Epic"),
-
-        ...mapGames(ubisoftRaw, "Ubisoft"),
-
-        ...mapGames(gogRaw, "GOG"),
-
-      ];
-
-
-
-      // Show games immediately then enrich metadata
-
-      setSteamGames([...steamGames, ...otherGames]);
-
-
-
-      // Enrich non-Steam games with IGDB metadata sequentially
-
-      const enriched: Game[] = [];
-
-      for (const game of otherGames) {
-
-        try {
-
-          // Check cache first
-
-          const cached = metadataCache.get(game.title);
-
-          let cover: string, genre: string;
-
-          
-
-          if (cached) {
-
-            [cover, genre] = [cached.cover, cached.genre];
-
-            console.log(`Cache hit for: ${game.title}`);
-
-          } else {
-
-            [cover, genre] = await invoke<[string, string]>(
-
-              "enrich_game_metadata",
-
-              { name: game.title }
-
-            );
-
-            // Cache results
-
-            metadataCache.set(game.title, cover, genre);
-
-            console.log(`API call for: ${game.title}`);
-
-          }
-
-          
-
-          enriched.push({
-
-            ...game,
-
-            cover: cover || game.cover,
-
-            genre: genre || game.genre,
-
-          });
-
-        } catch {
-
-          enriched.push(game);
-
-        }
-
-        // Small delay to avoid rate limiting
-
-        await new Promise((resolve) => setTimeout(resolve, 300));
-
-      }
-
-
-
-      setSteamGames([...steamGames, ...enriched]);
-
-    } catch (err) {
-
-      console.error("Scan error:", err);
-
-    }
-
-  }; // Added missing closing brace here
-
 
 
   // Toggle pin
