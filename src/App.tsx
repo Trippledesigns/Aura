@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 
-import { Gamepad2, Home, Search, BarChart2, Clock, Settings as SettingsIcon, Sun, Moon } from "lucide-react";
+import { Gamepad2, Home, Search, BarChart2, Clock, Settings as SettingsIcon, Sun, Moon, Pin } from "lucide-react";
 
 import GameCard, { Game } from "./GameCard";
 
@@ -15,6 +15,10 @@ import Recent from "./Recent";
 import Stats from "./Stats";
 
 import Onboarding from "./Onboarding";
+
+import RandomPicker from "./RandomPicker";
+
+import OnThisDay from "./OnThisDay";
 
 import UpdateModal from "./UpdateModal";
 
@@ -95,10 +99,13 @@ function App() {
   const [localGames, setLocalGames] = useState<Game[]>([]);
 
   const [theme, setTheme] = useState("midnight");
+  const [localFolders, setLocalFolders] = useState<string[]>([]);
 
   const [activePage, setActivePage] = useState<"library" | "recent" | "stats" | "settings">("library");
 
   const [search, setSearch] = useState("");
+
+  const [pinnedIds, setPinnedIds] = useState<(string | number)[]>([]);
 
   const [onboardingDone, setOnboardingDone] = useState(() => {
 
@@ -146,8 +153,6 @@ function App() {
 
         });
 
-      
-
         setLocalGames(games);
 
       } catch (err) {
@@ -162,17 +167,31 @@ function App() {
 
 
 
+  useEffect(() => {
+
+    invoke<any>("load_settings").then((settings) => {
+
+      if (settings.theme) setTheme(settings.theme);
+
+      if (settings.local_folders) setLocalFolders(settings.local_folders);
+
+    });
+
+  }, []);
+
   const loadGames = async () => {
 
     try {
 
-      const [steamRaw, epicRaw, ubisoftRaw] = await Promise.all([
+      const [steamRaw, epicRaw, ubisoftRaw, gogRaw] = await Promise.all([
 
         invoke<any[]>("scan_steam_games"),
 
         invoke<any[]>("scan_epic_games"),
 
         invoke<any[]>("scan_ubisoft_games"),
+
+        invoke<any[]>("scan_gog_games"),
 
       ]);
 
@@ -215,6 +234,8 @@ function App() {
         ...mapGames(epicRaw, "Epic"),
 
         ...mapGames(ubisoftRaw, "Ubisoft"),
+
+        ...mapGames(gogRaw, "GOG"),
 
       ];
 
@@ -300,55 +321,44 @@ function App() {
 
     }
 
-  };
+  }; // Added missing closing brace here
 
 
 
-  useEffect(() => {
+  // Toggle pin
 
-    // Start file watcher
+  const handleTogglePin = (id: string | number) => {
 
-    invoke("start_file_watcher");
+    setPinnedIds((prev) => {
 
+      const newPinned = prev.includes(id)
 
+        ? prev.filter((p) => p !== id)
 
-    // Listen for library changes
+        : [...prev, id];
 
-    const unlistenPromise = listen("library-changed", () => {
+      invoke("save_pinned_games", { gameIds: newPinned.map(String) });
 
-      console.log("Library changed — rescanning...");
-
-      loadGames();
+      return newPinned;
 
     });
 
+  };
+
+  const handleUninstall = (id: string | number) => {
+    setSteamGames((prev) => prev.filter((g) => g.id !== id));
+    setLocalGames((prev) => prev.filter((g) => g.id !== id));
+  };
 
 
-    loadGames();
-
-    
-
-    // Background scanning and cache cleanup
-
-    const interval = setInterval(() => {
-
-      metadataCache.cleanup();
-
-      console.log("Cache cleanup completed");
-
-    }, 60 * 60 * 1000); // Every hour
-
-    
-
-    return () => {
-
-      clearInterval(interval);
-
-      unlistenPromise.then((unlisten) => unlisten());
-
-    };
-
-  }, []);
+  // Save settings when theme changes
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme);
+    invoke("save_settings", { 
+      theme: newTheme, 
+      localFolders: localFolders 
+    });
+  };
 
 
 
@@ -420,23 +430,32 @@ function App() {
 
   const filteredGames = useMemo(() => {
 
-    return allGames.filter((g) => {
+    return allGames
+      .filter((g) => {
 
-      const genreOk = activeGenre === "All" || g.genre === activeGenre;
+        const genreOk = activeGenre === "All" || g.genre === activeGenre;
 
-      const modeOk =
+        const modeOk =
 
-        activeMode === "all" ||
+          activeMode === "all" ||
 
-        (activeMode === "weekend" && g.playtime >= 40) ||
+          (activeMode === "weekend" && g.playtime >= 40) ||
 
-        (activeMode === "weekday" && g.playtime < 40);
+          (activeMode === "weekday" && g.playtime < 40);
 
-      const searchOk = search === "" || g.title.toLowerCase().includes(search.toLowerCase());
+        const searchOk = search === "" || g.title.toLowerCase().includes(search.toLowerCase());
 
-      return genreOk && modeOk && searchOk;
+        return genreOk && modeOk && searchOk;
 
-    });
+      })
+      .sort((a, b) => {
+        // Never played goes to bottom
+        if (!a.lastPlayed && !b.lastPlayed) return 0;
+        if (!a.lastPlayed) return 1;
+        if (!b.lastPlayed) return -1;
+        // Most recently played first
+        return new Date(b.lastPlayed).getTime() - new Date(a.lastPlayed).getTime();
+      });
 
   }, [activeGenre, activeMode, allGames, search]);
 
@@ -602,9 +621,9 @@ function App() {
 
                 activeTheme={theme}
 
-                onThemeChange={setTheme}
+                onThemeChange={handleThemeChange}
 
-                localFolders={[]}
+                localFolders={localFolders}
 
                 onAddFolder={(games) => {
 
@@ -612,9 +631,13 @@ function App() {
 
                 }}
 
-                onRemoveFolder={() => {
+                onRemoveFolder={(folder) => {
 
-                  // setLocalFolders((prev) => prev.filter((f) => f !== folder));
+                  const newFolders = localFolders.filter((f) => f !== folder);
+
+                  setLocalFolders(newFolders);
+
+                  invoke("save_settings", { theme, localFolders: newFolders });
 
                 }}
 
@@ -637,6 +660,8 @@ function App() {
                       Add Local Folder
 
                     </button>
+
+                    <RandomPicker games={filteredGames} />
 
                     <div className="search-bar">
 
@@ -661,6 +686,8 @@ function App() {
                   </div>
 
                 </div>
+
+                <OnThisDay games={allGames} />
 
                 <MoodPicker games={allGames} />
 
@@ -690,13 +717,73 @@ function App() {
 
                 <VirtualGrid>
 
+                  {/* Pinned Games */}
+
+                  {pinnedIds.length > 0 && (
+
+                    <div className="pinned-section">
+
+                      <p className="pinned-section-title">
+
+                        <Pin size={11} /> Pinned
+
+                      </p>
+
+                      <div className="game-grid">
+
+                        {filteredGames
+
+                          .filter((g) => pinnedIds.indexOf(g.id) !== -1)
+
+                          .map((game) => (
+
+                            <GameCard
+
+                              key={game.id}
+
+                              game={game}
+
+                              isPinned={true}
+
+                              onTogglePin={handleTogglePin}
+
+                              onUninstall={handleUninstall}
+
+                            />
+
+                          ))}
+
+                      </div>
+
+                    </div>
+
+                  )}
+
+                  {/* All Games */}
+
                   <div className="game-grid">
 
-                    {filteredGames.map((game) => (
+                    {filteredGames
 
-                      <GameCard key={game.id} game={game} />
+                      .filter((g) => pinnedIds.indexOf(g.id) === -1)
 
-                    ))}
+                      .map((game) => (
+
+                        <GameCard
+
+                          key={game.id}
+
+                          game={game}
+
+                          isPinned={false}
+
+                          onTogglePin={handleTogglePin}
+
+                          onUninstall={handleUninstall}
+
+                        />
+
+                      ))}
 
                   </div>
 

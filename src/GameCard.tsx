@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { Pin, Trash2 } from "lucide-react";
 
 interface Game {
   id: number | string;
@@ -20,9 +21,17 @@ const PLATFORM_COLORS: Record<string, string> = {
   Local: "#ff8c42",
 };
 
-function GameCard({ game }: { game: Game }) {
+interface GameCardProps {
+  game: Game;
+  isPinned?: boolean;
+  onTogglePin?: (id: string | number) => void;
+  onUninstall?: (id: string | number) => void;
+}
+
+function GameCard({ game, isPinned = false, onTogglePin, onUninstall }: GameCardProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
+  const [confirmUninstall, setConfirmUninstall] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -30,7 +39,6 @@ function GameCard({ game }: { game: Game }) {
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsInView(true);
-          // Preload image when it comes into view
           if (imgRef.current && !isLoaded) {
             const img = new Image();
             img.src = game.cover;
@@ -65,17 +73,38 @@ function GameCard({ game }: { game: Game }) {
     }
   };
 
+  const handlePin = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onTogglePin?.(game.id);
+  };
+
+  const handleUninstall = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirmUninstall) {
+      setConfirmUninstall(true);
+      setTimeout(() => setConfirmUninstall(false), 3000);
+      return;
+    }
+    await invoke("uninstall_game", {
+      platform: game.platform,
+      gameId: String(game.id),
+      launchCommand: game.launchCommand || "",
+    });
+    onUninstall?.(game.id);
+    setConfirmUninstall(false);
+  };
+
   return (
-    <div className="game-card">
+    <div className={`game-card ${isPinned ? "pinned" : ""}`}>
       <div className="game-cover">
-        <img 
+        <img
           ref={imgRef}
-          src={isInView ? game.cover : ''}
+          src={isInView && game.cover ? game.cover : undefined}
           alt={game.title}
           onLoad={() => setIsLoaded(true)}
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = "none";
-            (e.target as HTMLImageElement).parentElement!.style.background = 
+            (e.target as HTMLImageElement).parentElement!.style.background =
               "linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(10, 10, 20, 0.8))";
           }}
         />
@@ -85,7 +114,21 @@ function GameCard({ game }: { game: Game }) {
           </div>
         )}
         <div className="game-overlay">
+          <button
+            className={`pin-btn ${isPinned ? "pinned" : ""}`}
+            onClick={handlePin}
+            title={isPinned ? "Unpin" : "Pin to top"}
+          >
+            <Pin size={14} />
+          </button>
           <button className="launch-btn" onClick={handleLaunch}>▶ Play</button>
+          <button
+            className={`uninstall-btn ${confirmUninstall ? "confirm" : ""}`}
+            onClick={handleUninstall}
+            title="Uninstall"
+          >
+            {confirmUninstall ? "Sure?" : <Trash2 size={12} />}
+          </button>
         </div>
       </div>
       <div className="game-info">
@@ -99,8 +142,15 @@ function GameCard({ game }: { game: Game }) {
           </span>
           <span className="game-genre">{game.genre}</span>
         </div>
-        <p className="game-playtime">{game.playtime > 0 ? `${game.playtime}hrs played` : "Never played"}</p>
+        <p className="game-playtime">
+          {game.playtime > 0 ? `${game.playtime}hrs played` : "Never played"}
+        </p>
       </div>
+      {isPinned && (
+        <div className="pinned-badge">
+          <Pin size={10} />
+        </div>
+      )}
     </div>
   );
 }

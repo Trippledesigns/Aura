@@ -38,7 +38,7 @@ A beautiful, modern desktop game launcher that automatically detects and organiz
 
 ### 📦 Download Installer
 1. Download the latest release from [Releases](https://github.com/yourusername/aura/releases)
-2. Run `aura_0.1.0_x64-setup.exe` (Windows)
+2. Run `aura_0.3.0_x64-setup.exe` (Windows)
 3. Follow the installation wizard
 4. Launch Aura from Start Menu or system tray
 

@@ -171,7 +171,7 @@ function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRem
         <div className="update-section">
           <div className="update-info">
             <p className="update-version-label">Current Version</p>
-            <p className="update-version">v0.2.5</p>
+            <p className="update-version">v0.3.0</p>
           </div>
 
           {updateStatus === "idle" && (
@@ -222,7 +222,7 @@ function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRem
         <div className="about-card">
           <div className="about-logo">
             <span className="about-name">Aura</span>
-            <span className="about-version">v0.2.5</span>
+            <span className="about-version">v0.3.0</span>
           </div>
           <p className="about-tagline">"400 games. 6 launchers. Playing the same 3."</p>
           <p className="about-desc">Built by a gamer who was just really annoyed. 😄</p>

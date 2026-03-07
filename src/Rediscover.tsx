@@ -36,10 +36,11 @@ function Rediscover({ games }: RediscoverProps) {
   ]);
   const [revealed, setRevealed] = useState(false);
   const [spinning, setSpinning] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const pick = () => {
     setSpinning(true);
-    setRevealed(false);
+    setIsResetting(true);
 
     setTimeout(() => {
       const neverPlayed = games.filter((g) => g.playtime === 0);
@@ -48,15 +49,29 @@ function Rediscover({ games }: RediscoverProps) {
       );
       const unfinished = games.filter((g) => isUnfinished(g));
 
-      setSlots([
+      const picked = [
         { label: "Never Launched", emoji: "🕹️", description: "Installed but never played", game: pickRandom(neverPlayed) },
         { label: "Long Lost", emoji: "💀", description: "Haven't played in 6+ months", game: pickRandom(longLost) },
         { label: "Left Unfinished", emoji: "⏳", description: "Started but never completed", game: pickRandom(unfinished) },
-      ]);
+      ];
 
       setSpinning(false);
-      setRevealed(true);
-    }, 800);
+
+      // Reveal one slot at a time with stagger
+      picked.forEach((_, i) => {
+        setTimeout(() => {
+          setSlots((prev) => {
+            const next = [...prev];
+            next[i] = picked[i];
+            return next;
+          });
+          if (i === picked.length - 1) {
+            setRevealed(true);
+            setIsResetting(false); // Only set false after last slot
+          }
+        }, 300 + i * 800); // 300ms initial delay then 800ms between each card
+      });
+    }, 600);
   };
 
   const reroll = (index: number) => {
@@ -86,8 +101,8 @@ function Rediscover({ games }: RediscoverProps) {
 
       <div className="rediscover-slots">
         {slots.map((slot, i) => (
-          <div key={i} className={`rediscover-slot ${revealed && slot.game ? "revealed" : ""}`}>
-            {revealed && slot.game ? (
+          <div key={i} className={`rediscover-slot ${slot.game && !isResetting ? "revealed" : ""}`}>
+            {slot.game && !isResetting ? (
               <>
                 <div className="slot-cover">
                   <img src={slot.game.cover} alt={slot.game.title} />

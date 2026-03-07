@@ -1056,11 +1056,215 @@ fn start_file_watcher(app: tauri::AppHandle) {
 
 
 
-// ─── Entry point ─────────────────────────────────────────────────────
+#[tauri::command]
+
+fn save_pinned_games(games: Vec<serde_json::Value>) -> bool {
+
+    let path = dirs::data_local_dir()
+
+        .unwrap_or_default()
+
+        .join("aura")
+
+        .join("pinned.json");
+
+
+
+    std::fs::create_dir_all(path.parent().unwrap()).ok();
+
+
+
+    std::fs::write(&path, serde_json::to_string_pretty(&games).unwrap_or_default()).is_ok()
+
+}
+
+
+
+#[tauri::command]
+
+fn get_pinned_games() -> Vec<serde_json::Value> {
+
+    let path = dirs::data_local_dir()
+
+        .unwrap_or_default()
+
+        .join("aura")
+
+        .join("pinned.json");
+
+
+
+    std::fs::read_to_string(&path)
+
+        .ok()
+
+        .and_then(|c| serde_json::from_str(&c).ok())
+
+        .unwrap_or_default()
+
+}
+
+
+
+#[tauri::command]
+fn save_settings(theme: String, local_folders: Vec<String>) -> bool {
+    let path = dirs::data_local_dir()
+        .unwrap_or_default()
+        .join("aura")
+        .join("settings.json");
+
+    std::fs::create_dir_all(path.parent().unwrap()).ok();
+    
+    let settings = serde_json::json!({
+        "theme": theme,
+        "local_folders": local_folders
+    });
+    
+    std::fs::write(&path, serde_json::to_string_pretty(&settings).unwrap_or_default()).is_ok()
+}
+
+#[tauri::command]
+fn load_settings() -> serde_json::Value {
+    let path = dirs::data_local_dir()
+        .unwrap_or_default()
+        .join("aura")
+        .join("settings.json");
+
+    std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|c| serde_json::from_str(&c).ok())
+        .unwrap_or(serde_json::json!({
+            "theme": "midnight",
+            "local_folders": []
+        }))
+}
+
+#[tauri::command]
+fn scan_gog_games() -> Vec<ScannedGame> {
+    let mut games = Vec::new();
+
+    let hklm = winreg::RegKey::predef(HKEY_LOCAL_MACHINE);
+    let gog_games = match hklm.open_subkey("SOFTWARE\\WOW6432Node\\GOG.com\\Games") {
+        Ok(k) => k,
+        Err(_) => return games,
+    };
+
+    for subkey_name in gog_games.enum_keys().flatten() {
+        let subkey = match gog_games.open_subkey(&subkey_name) {
+            Ok(k) => k,
+            Err(_) => continue,
+        };
+
+        let name: String = match subkey.get_value("gameName") {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+
+        let launch_command: String = subkey
+            .get_value("launchCommand")
+            .unwrap_or_else(|_| format!("goggalaxy://openGame/{}", subkey_name));
+
+        let last_played: u64 = subkey
+            .get_value("lastPlayedDate")
+            .unwrap_or_else(|_| "0".to_string())
+            .parse()
+            .unwrap_or(0);
+
+        let cover = format!(
+            "https://images.gog-statics.com/5643a7c831df452d29005caeca24c28cdbfaa6fbeff6620bf2a7016b6fe19402_product_card_v2_mobile_slider_639.jpg"
+        );
+
+        games.push(ScannedGame {
+            id: subkey_name.clone(),
+            name,
+            last_played,
+            playtime: 0,
+            cover,
+            platform: "GOG".to_string(),
+
+            launch_command,
+
+        });
+
+    }
+
+    
+
+    games
+
+}
+
+
+
+#[tauri::command]
+
+fn uninstall_game(platform: String, game_id: String, _launch_command: String) -> bool {
+
+    use std::process::Command;
+
+    
+
+    match platform.as_str() {
+
+        "Steam" => {
+
+            // Extract appid from launch command steam://rungameid/12345
+
+            let appid = game_id.clone();
+
+            Command::new("cmd")
+
+                .args(["/C", "start", "", &format!("steam://uninstall/{}", appid)])
+
+                .spawn()
+
+                .is_ok()
+
+        }, // Added a comma here
+
+        "Epic" => {
+
+            Command::new("cmd")
+
+                .args(["/C", "start", "", &format!("com.epicgames.launcher://apps/{}?action=uninstall", game_id)])
+
+                .spawn()
+                .is_ok()
+        },
+        "Ubisoft" => {
+            Command::new("cmd")
+                .args(["/C", "start", "", &format!("uplay://uninstall/{}", game_id)])
+                .spawn()
+                .is_ok()
+        },
+        "GOG" => {
+            // GOG uses standard Windows uninstaller via registry
+            let hklm = winreg::RegKey::predef(winreg::enums::HKEY_LOCAL_MACHINE);
+            if let Ok(key) = hklm.open_subkey_with_flags(
+                format!("SOFTWARE\\WOW6432Node\\GOG.com\\Games\\{}", game_id),
+                winreg::enums::KEY_READ,
+            ) {
+                if let Ok(uninstall_cmd) = key.get_value("uninstallCommand") {
+                    let uninstall: String = uninstall_cmd;
+                    Command::new("cmd")
+                        .args(["/C", &uninstall])
+                        .spawn()
+                        .expect("Failed to spawn uninstall command");
+                    return true;
+                }
+            }
+            false
+        },
+        _ => false,
+    }
+
+}
 
 
 
 pub fn run() {
+
+    
 
     tauri::Builder::default()
 
@@ -1158,8 +1362,6 @@ pub fn run() {
 
                 .build(app)?;
 
-
-
             Ok(())
 
         })
@@ -1172,6 +1374,8 @@ pub fn run() {
 
             scan_ubisoft_games,
 
+            scan_gog_games,
+
             enrich_game_metadata,
 
             launch_game,
@@ -1182,12 +1386,21 @@ pub fn run() {
 
             get_recent_games,
 
-            start_file_watcher
+            start_file_watcher,
+
+            save_pinned_games,
+
+            get_pinned_games,
+
+            save_settings,
+
+            load_settings,
+
+            uninstall_game,
 
         ])
 
         .run(tauri::generate_context!())
 
         .expect("error while running tauri application");
-
 }

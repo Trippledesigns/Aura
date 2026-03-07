@@ -8,9 +8,10 @@ interface OnboardingProps {
 }
 
 const STEPS = [
-  { id: "steam", label: "Steam", icon: "⚙️", command: "scan_steam_games", platform: "Steam" },
-  { id: "epic", label: "Epic Games", icon: "◈", command: "scan_epic_games", platform: "Epic" },
-  { id: "ubisoft", label: "Ubisoft Connect", icon: "◉", command: "scan_ubisoft_games", platform: "Ubisoft" },
+  { id: "steam", label: "Steam", icon: "", command: "scan_steam_games", platform: "Steam" },
+  { id: "epic", label: "Epic Games", icon: "", command: "scan_epic_games", platform: "Epic" },
+  { id: "ubisoft", label: "Ubisoft Connect", icon: "", command: "scan_ubisoft_games", platform: "Ubisoft" },
+  { id: "gog", label: "GOG Galaxy", icon: "", command: "scan_gog_games", platform: "GOG" },
 ];
 
 type StepStatus = "waiting" | "scanning" | "done" | "error";
@@ -25,6 +26,7 @@ function Onboarding({ onComplete }: OnboardingProps) {
     steam: { status: "waiting", count: 0 },
     epic: { status: "waiting", count: 0 },
     ubisoft: { status: "waiting", count: 0 },
+    gog: { status: "waiting", count: 0 },
   });
   const [totalGames, setTotalGames] = useState(0);
   const [finished, setFinished] = useState(false);
