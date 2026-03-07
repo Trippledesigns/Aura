@@ -175,6 +175,51 @@ function App() {
 
   }, []);
 
+  // Auto-detect games on first load if no games exist
+  useEffect(() => {
+    if (onboardingDone && steamGames.length === 0 && localGames.length === 0) {
+      const detectGames = async () => {
+        try {
+          const [steamRaw, epicRaw, ubisoftRaw, gogRaw] = await Promise.all([
+            invoke<any[]>("scan_steam_games"),
+            invoke<any[]>("scan_epic_games"),
+            invoke<any[]>("scan_ubisoft_games"),
+            invoke<any[]>("scan_gog_games"),
+          ]);
+
+          const mapGames = (games: any[], platform: string): Game[] =>
+            games.map((g) => ({
+              id: g.id,
+              title: g.name,
+              genre: "Unknown",
+              platform,
+              playtime: g.playtime,
+              hltb: 0,
+              lastPlayed: g.last_played > 0
+                ? new Date(g.last_played * 1000).toISOString().split("T")[0]
+                : null,
+              cover: g.cover,
+              launchCommand: g.launch_command,
+            }));
+
+          const detectedGames = [
+            ...mapGames(steamRaw, "Steam"),
+            ...mapGames(epicRaw, "Epic"),
+            ...mapGames(ubisoftRaw, "Ubisoft"),
+            ...mapGames(gogRaw, "GOG"),
+          ];
+
+          if (detectedGames.length > 0) {
+            setSteamGames(detectedGames);
+          }
+        } catch (err) {
+          console.error("Game detection error:", err);
+        }
+      };
+
+      detectGames();
+    }
+  }, [onboardingDone, steamGames.length, localGames.length]);
 
   // Toggle pin
 
