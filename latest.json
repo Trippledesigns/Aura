@@ -1,18 +1,18 @@
 {
 
-  "version": "0.2.5",
+  "version": "0.3.0",
 
-  "notes": "🎮 Aura v0.2.5\n✅ Version number now displayed in Settings\n🔄 Auto updater improvements",
+  "notes": "🎮 Aura v0.3.0 - Major Uninstall Feature Release\n\n🎮 NEW: Game Uninstall Feature\n- Platform support: Steam, Epic Games, Ubisoft Connect, GOG\n- Two-click confirmation to prevent accidental uninstalls\n- Seamless UI integration with uninstall button in game cards\n- Registry integration for GOG uninstaller detection\n\n🎨 UI/UX Improvements\n- Red-themed uninstall button with trash icon\n- Visual feedback with hover states and confirmation animations\n- 'Sure?' confirmation text on second click\n- Auto-reset after 3-second timeout\n\n🔧 Technical Updates\n- Rust backend with cross-platform command execution\n- Proper TypeScript interfaces and type safety\n- Robust error handling and state management\n- Clean game removal logic\n\n🐛 Bug Fixes\n- Fixed all Rust compilation syntax errors\n- Corrected winreg usage and type annotations\n- Resolved variable shadowing conflicts\n- Addressed unused variable warnings",
 
-  "pub_date": "2026-03-06T00:00:00Z",
+  "pub_date": "2025-03-07T13:00:00Z",
 
   "platforms": {
 
     "windows-x86_64": {
 
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYW9sQUxYYzRNSUg3bDB1OEprcEVKM2w1QUZ5QlVid29iNnNoMGdCZExZRmJrc3hiTzZXTHIzMDB0bXkrOWs3R1cxL01iT0tRcW91OGQ4QmtjNmdVRDFXbTNzczZXaFFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzcyODI2MzAwCWZpbGU6YXVyYV8wLjIuNF94NjQtc2V0dXAuZXhlClJpamJaM3NabWhCNjFqbGlpT20rcldJMXAvM21xWUNKbGVwSGZ3RFV3eXpYK2RyZWpHMW5vZi9pNGkvSG1lZlI0K2FYVmFnb2FTTGs1SENxcWN2TkNRPT0K",
+      "signature": "SIGNATURE_NEEDED_UPDATE_AFTER_UPLOAD",
 
-      "url": "https://github.com/Trippledesigns/Aura/releases/latest/download/aura_0.2.5_x64-setup.exe"
+      "url": "https://github.com/Trippledesigns/Aura/releases/latest/download/aura_0.3.0_x64-setup.exe"
 
     }
 
