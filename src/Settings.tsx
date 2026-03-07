@@ -2,8 +2,9 @@ import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { Game } from "./GameCard";
-import { Folder, Trash2, Check } from "lucide-react";
+import { Folder, Trash2, Check, RefreshCw, MessageSquare } from "lucide-react";
 import { checkForUpdates, installUpdate } from "./updater";
+import Feedback from "./Feedback";
 
 const THEMES = [
   { id: "midnight", name: "Midnight", emoji: "🌑", bg: "#0a0a14", accent: "#a78bfa" },
@@ -19,13 +20,22 @@ interface SettingsProps {
   localFolders: string[];
   onAddFolder: (games: Game[]) => void;
   onRemoveFolder: (folder: string) => void;
+  onRescan: () => Promise<void>;
 }
 
-function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRemoveFolder }: SettingsProps) {
+function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRemoveFolder, onRescan }: SettingsProps) {
   // Update state management
   const [updateStatus, setUpdateStatus] = useState<"idle" | "checking" | "available" | "latest">("idle");
   const [updateVersion, setUpdateVersion] = useState<string>("");
   const [updateNotes, setUpdateNotes] = useState<string>("");
+  const [rescanning, setRescanning] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+
+  const handleRescan = async () => {
+    setRescanning(true);
+    await onRescan();
+    setTimeout(() => setRescanning(false), 1500);
+  };
 
   const handleCheckUpdates = async () => {
     setUpdateStatus("checking");
@@ -163,6 +173,28 @@ function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRem
         )}
       </div>
 
+      {/* Library Section */}
+      <div className="settings-section">
+        <div className="settings-section-header">
+          <h2 className="settings-section-title">Library</h2>
+          <p className="settings-section-desc">Manage your game library</p>
+        </div>
+        <div className="rescan-row">
+          <div>
+            <p className="rescan-title">Rescan Library</p>
+            <p className="rescan-desc">Manually refresh all platforms if a game is missing or was recently uninstalled</p>
+          </div>
+          <button
+            className={`rescan-btn ${rescanning ? "scanning" : ""}`}
+            onClick={handleRescan}
+            disabled={rescanning}
+          >
+            <RefreshCw size={14} className={rescanning ? "spinning-icon" : ""} />
+            {rescanning ? "Scanning..." : "Rescan"}
+          </button>
+        </div>
+      </div>
+
       {/* Update Section */}
       <div className="settings-section">
         <div className="settings-section-header">
@@ -171,7 +203,7 @@ function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRem
         <div className="update-section">
           <div className="update-info">
             <p className="update-version-label">Current Version</p>
-            <p className="update-version">v0.3.0</p>
+            <p className="update-version">v0.3.1</p>
           </div>
 
           {updateStatus === "idle" && (
@@ -222,12 +254,17 @@ function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRem
         <div className="about-card">
           <div className="about-logo">
             <span className="about-name">Aura</span>
-            <span className="about-version">v0.3.0</span>
+            <span className="about-version">v0.3.1</span>
           </div>
           <p className="about-tagline">"400 games. 6 launchers. Playing the same 3."</p>
           <p className="about-desc">Built by a gamer who was just really annoyed. 😄</p>
+          <button className="check-update-btn" onClick={() => setFeedbackOpen(true)}>
+            <MessageSquare size={14} />
+            Send Feedback
+          </button>
         </div>
       </div>
+      <Feedback isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   );
 }

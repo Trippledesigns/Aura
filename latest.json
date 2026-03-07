@@ -1,6 +1,6 @@
 {
 
-  "version": "0.3.0",
+  "version": "0.3.1",
 
   "notes": "🎮 Aura v0.3.0 - Major Uninstall Feature Release\n\n🎮 NEW: Game Uninstall Feature\n- Platform support: Steam, Epic Games, Ubisoft Connect, GOG\n- Two-click confirmation to prevent accidental uninstalls\n- Seamless UI integration with uninstall button in game cards\n- Registry integration for GOG uninstaller detection\n\n🎨 UI/UX Improvements\n- Red-themed uninstall button with trash icon\n- Visual feedback with hover states and confirmation animations\n- 'Sure?' confirmation text on second click\n- Auto-reset after 3-second timeout\n\n🔧 Technical Updates\n- Rust backend with cross-platform command execution\n- Proper TypeScript interfaces and type safety\n- Robust error handling and state management\n- Clean game removal logic\n\n🐛 Bug Fixes\n- Fixed all Rust compilation syntax errors\n- Corrected winreg usage and type annotations\n- Resolved variable shadowing conflicts\n- Addressed unused variable warnings",
 
@@ -12,7 +12,7 @@
 
       "signature": "SIGNATURE_NEEDED_UPDATE_AFTER_UPLOAD",
 
-      "url": "https://github.com/Trippledesigns/Aura/releases/latest/download/aura_0.3.0_x64-setup.exe"
+      "url": "https://github.com/Trippledesigns/Aura/releases/latest/download/aura_0.3.1_x64-setup.exe"
 
     }
 

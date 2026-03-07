@@ -2,6 +2,30 @@
 
 All notable changes to Aura will be documented in this file.
 
+## [0.3.1] - 2025-03-07
+
+### 📮 **NEW: Feedback System**
+- ✅ **In-App Feedback**: Send bug reports, feature requests, and general feedback
+- ✅ **Feedback Types**: Bug Report, Feature Request, General Feedback categories
+- ✅ **Easy Access**: Feedback button in Settings About section
+- ✅ **Modern UI**: Clean modal interface with Discord-style embeds
+- ✅ **Auto-Close**: Feedback modal closes automatically after submission
+- ✅ **Visual Feedback**: Loading states and success confirmation
+
+### 🎨 **UI/UX Improvements**
+- ✅ **Settings Integration**: Seamless feedback access from About section
+- ✅ **Responsive Design**: Mobile-friendly feedback interface
+- ✅ **Loading States**: Visual feedback during submission
+- ✅ **Error Handling**: Graceful fallback for failed submissions
+
+### 🔧 **Technical Updates**
+- ✅ **TypeScript**: Proper type safety for feedback system
+- ✅ **Component Architecture**: Reusable Feedback modal component
+- ✅ **State Management**: Clean React state handling
+- ✅ **Webhook Integration**: Discord-compatible embed formatting
+
+---
+
 ## [0.3.0] - 2025-03-07
 
 ### 🎮 **NEW: Game Uninstall Feature**
