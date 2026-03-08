@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::mpsc;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use notify::{Watcher, RecursiveMode, recommended_watcher};
 use winreg::enums::*;
 
