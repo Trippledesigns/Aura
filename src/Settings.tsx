@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { Game } from "./GameCard";
 import { Folder, Trash2, Check, RefreshCw, MessageSquare } from "lucide-react";
-import { checkForUpdates, installUpdate } from "./updater";
+import { checkForUpdates, installUpdate, getCurrentVersion } from "./updater";
 import Feedback from "./Feedback";
 
 const THEMES = [
@@ -30,6 +30,13 @@ function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRem
   const [updateNotes, setUpdateNotes] = useState<string>("");
   const [rescanning, setRescanning] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+
+  // Load current version dynamically
+  const [currentVersion, setCurrentVersion] = useState<string>("");
+
+  useEffect(() => {
+    getCurrentVersion().then(setCurrentVersion);
+  }, []);
 
   const handleRescan = async () => {
     setRescanning(true);
@@ -203,7 +210,7 @@ function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRem
         <div className="update-section">
           <div className="update-info">
             <p className="update-version-label">Current Version</p>
-            <p className="update-version">v0.3.2</p>
+            <p className="update-version">v{currentVersion || "Loading..."}</p>
           </div>
 
           {updateStatus === "idle" && (
@@ -254,7 +261,7 @@ function Settings({ activeTheme, onThemeChange, localFolders, onAddFolder, onRem
         <div className="about-card">
           <div className="about-logo">
             <span className="about-name">Aura</span>
-            <span className="about-version">v0.3.2</span>
+            <span className="about-version">v{currentVersion || "Loading..."}</span>
           </div>
           <p className="about-tagline">"400 games. 6 launchers. Playing the same 3."</p>
           <p className="about-desc">Built by a gamer who was just really annoyed. 😄</p>
