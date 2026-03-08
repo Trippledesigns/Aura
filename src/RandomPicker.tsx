@@ -43,7 +43,11 @@ function RandomPicker({ games }: RandomPickerProps) {
 
   const handlePlay = async () => {
     if (pickedGame?.launchCommand) {
-      await invoke("launch_game", { launchCommand: pickedGame.launchCommand });
+      await invoke("launch_and_track", {
+        gameId: String(pickedGame.id),
+        launchCommand: pickedGame.launchCommand,
+        processName: pickedGame.processName || "",
+      });
       await invoke("save_recent_game", {
         gameId: String(pickedGame.id),
         gameName: pickedGame.title,
