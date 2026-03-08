@@ -14,6 +14,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { metadataCache } from "./cache";
 import "./App.css";
 
 const VirtualGrid = ({ children }: { children: React.ReactNode }) => {
@@ -56,6 +57,49 @@ function App() {
       processName: g.process_name || "",
     }));
 
+  const enrichGames = async (games: Game[]) => {
+    const unenriched = games.filter((g) => !metadataCache.get(g.title));
+
+    for (const game of unenriched) {
+      try {
+        const [cover, genre] = await invoke<[string, string]>("enrich_game_metadata", {
+          name: game.title,
+        });
+
+        metadataCache.set(game.title, cover, genre);
+
+        if (cover || genre !== "Unknown") {
+          setSteamGames((prev) =>
+            prev.map((g) =>
+              g.id === game.id
+                ? { ...g, cover: cover || g.cover, genre: genre || g.genre }
+                : g
+            )
+          );
+        }
+      } catch (err) {
+        console.error("Enrich failed for:", game.title);
+      }
+
+      await new Promise((r) => setTimeout(r, 300));
+    }
+
+    // Apply cached data to all games immediately
+    setSteamGames((prev) =>
+      prev.map((g) => {
+        const cached = metadataCache.get(g.title);
+        if (cached) {
+          return {
+            ...g,
+            cover: cached.cover || g.cover,
+            genre: cached.genre || g.genre,
+          };
+        }
+        return g;
+      })
+    );
+  };
+
   const loadGames = async () => {
     try {
       const [steamRaw, epicRaw, ubisoftRaw, gogRaw] = await Promise.all([
@@ -73,6 +117,7 @@ function App() {
       ];
 
       setSteamGames([...steam, ...other]);
+    enrichGames([...steam, ...other]); // Fire and forget
     } catch (err) {
       console.error("Scan error:", err);
     }
