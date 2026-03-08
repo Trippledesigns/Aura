@@ -766,8 +766,8 @@ pub fn run() {
                     .build(app)?)
                 .build()?;
 
-            let icon_bytes = include_bytes!("../icons/Square30x30Logo.png");
-            let icon = tauri::image::Image::new_owned(icon_bytes.to_vec(), 30, 30);
+            let icon_bytes = include_bytes!("../icons/icon-48x48.png");
+            let icon = tauri::image::Image::new_owned(icon_bytes.to_vec(), 48, 48);
 
             let _tray = tauri::tray::TrayIconBuilder::new()
                 .icon(icon)
