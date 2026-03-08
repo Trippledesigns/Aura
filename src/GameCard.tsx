@@ -8,10 +8,12 @@ interface Game {
   genre: string;
   platform: string;
   playtime: number;
+  auraPlaytime?: number; // NEW - minutes tracked by Aura
   hltb: number;
   lastPlayed: string | null;
   cover: string;
   launchCommand?: string;
+  processName?: string; // NEW
 }
 
 const PLATFORM_COLORS: Record<string, string> = {
@@ -33,6 +35,21 @@ function GameCard({ game, isPinned = false, onTogglePin, onUninstall }: GameCard
   const [isInView, setIsInView] = useState(false);
   const [confirmUninstall, setConfirmUninstall] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  const displayPlaytime = () => {
+    if (game.platform === "Steam" && game.playtime > 0) {
+      return `${game.playtime}hrs on Steam`;
+    }
+    if (game.auraPlaytime && game.auraPlaytime > 0) {
+      const hours = Math.floor(game.auraPlaytime / 60);
+      const mins = game.auraPlaytime % 60;
+      return hours > 0 ? `${hours}hrs ${mins}m via Aura` : `${mins}m via Aura`;
+    }
+    if (game.platform === "Steam") {
+      return "Never played";
+    }
+    return "Play via Aura to track time";
+  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -63,7 +80,11 @@ function GameCard({ game, isPinned = false, onTogglePin, onUninstall }: GameCard
 
   const handleLaunch = async () => {
     if (game.launchCommand) {
-      await invoke("launch_game", { launchCommand: game.launchCommand });
+      await invoke("launch_and_track", {
+        gameId: String(game.id),
+        launchCommand: game.launchCommand,
+        processName: game.processName || "",
+      });
       await invoke("save_recent_game", {
         gameId: String(game.id),
         gameName: game.title,
@@ -142,9 +163,7 @@ function GameCard({ game, isPinned = false, onTogglePin, onUninstall }: GameCard
           </span>
           <span className="game-genre">{game.genre}</span>
         </div>
-        <p className="game-playtime">
-          {game.playtime > 0 ? `${game.playtime}hrs played` : "Never played"}
-        </p>
+        <p className="game-playtime">{displayPlaytime()}</p>
       </div>
       {isPinned && (
         <div className="pinned-badge">

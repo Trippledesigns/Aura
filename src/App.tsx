@@ -38,6 +38,7 @@ function App() {
     return localStorage.getItem("aura-onboarded") === "true";
   });
   const [updateInfo, setUpdateInfo] = useState<{ version: string; notes: string } | null>(null);
+  const [auraPlaytime, setAuraPlaytime] = useState<Record<string, number>>({});
 
   const mapGames = (games: any[], platform: string): Game[] =>
     games.map((g) => ({
@@ -52,6 +53,7 @@ function App() {
         : null,
       cover: g.cover,
       launchCommand: g.launch_command,
+      processName: g.process_name || "",
     }));
 
   const loadGames = async () => {
@@ -189,7 +191,29 @@ function App() {
     };
   }, []);
 
-  const allGames = [...steamGames, ...localGames];
+  // Load Aura playtime on startup
+  useEffect(() => {
+    invoke<Record<string, number>>("get_aura_playtime").then((pt) => {
+      setAuraPlaytime(pt);
+    });
+  }, []);
+
+  // Listen for playtime updates
+  useEffect(() => {
+    const unlisten = listen("playtime-updated", () => {
+      invoke<Record<string, number>>("get_aura_playtime").then((pt) => {
+        setAuraPlaytime(pt);
+      });
+    });
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, []);
+
+  const allGames = [...steamGames, ...localGames].map((g) => ({
+    ...g,
+    auraPlaytime: auraPlaytime[String(g.id)] || 0,
+  }));
 
   const genres = ["All", ...Array.from(new Set(allGames.map((g) => g.genre).filter(Boolean)))];
 

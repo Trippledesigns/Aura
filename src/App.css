@@ -1820,6 +1820,17 @@ body {
   font-weight: 600;
 }
 
+.onboarding.stats-note {
+  text-align: center;
+  color: #a78bfa;
+  font-size: 14px;
+  margin-top: 20px;
+  padding: 10px;
+  background: rgba(167, 139, 250, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(167, 139, 250, 0.2);
+}
+
 .onboarding-total {
   display: flex;
   flex-direction: column;

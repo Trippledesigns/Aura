@@ -68,6 +68,25 @@ function Stats({ games }: StatsProps) {
 
       {/* Stats Grid */}
       <div className="stats-grid">
+        <div className="stats-card">
+          <h3>Total Games</h3>
+          <p className="stats-value">{stats.total}</p>
+        </div>
+        <div className="stats-card">
+          <h3>Total Playtime</h3>
+          <p className="stats-value">{stats.totalHours}hrs</p>
+        </div>
+        <div className="stats-card">
+          <h3>Average Playtime</h3>
+          <p className="stats-value">{stats.totalHours / stats.total}hrs</p>
+        </div>
+        <div className="stats-card">
+          <h3>Most Played</h3>
+          <p className="stats-value">{stats.mostPlayed?.title || "N/A"}</p>
+        </div>
+        <p className="stats-note">
+          Playtime tracking via Aura is now available for all games!
+        </p>
         <div className="stat-card">
           <p className="stat-value">{stats.total}</p>
           <p className="stat-label">Total Games</p>

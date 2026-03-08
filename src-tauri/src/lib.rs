@@ -1,11 +1,125 @@
 use std::fs;
 use std::collections::HashMap;
 use std::sync::mpsc;
+use std::sync::{Mutex, LazyLock};
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use notify::{Watcher, RecursiveMode, recommended_watcher};
 use winreg::enums::*;
+
+// Global playtime tracker
+static PLAYTIME_TRACKER: LazyLock<HashMap<String, u64>> = LazyLock::new(|| {
+    let path = dirs::data_local_dir()
+        .unwrap_or_default()
+        .join("aura")
+        .join("playtime.json");
+
+    std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|c| serde_json::from_str(&c).ok())
+        .unwrap_or_default()
+}
+
+fn save_aura_playtime(playtime: &HashMap<String, u64>) {
+    let path = dirs::data_local_dir()
+        .unwrap_or_default()
+        .join("aura")
+        .join("playtime.json");
+
+    std::fs::create_dir_all(path.parent().unwrap()).ok();
+    std::fs::write(&path, serde_json::to_string_pretty(playtime).unwrap_or_default()).ok();
+}
+
+#[tauri::command]
+fn launch_and_track(app: tauri::AppHandle, game_id: String, launch_command: String, process_name: String) -> bool {
+    use std::process::Command;
+
+    // Launch the game
+    let launched = if launch_command.starts_with("steam://")
+        || launch_command.starts_with("com.epicgames")
+        || launch_command.starts_with("uplay://")
+    {
+        Command::new("cmd")
+            .args(["/C", "start", "", &launch_command])
+            .spawn()
+            .is_ok()
+    } else {
+        Command::new(&launch_command).spawn().is_ok()
+    };
+
+    if !launched {
+        return false;
+    }
+
+    let start_time = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    // Track in background thread
+    std::thread::spawn(move || {
+        // Wait for process to appear (up to 30 seconds)
+        let mut process_found = false;
+        for _ in 0..30 {
+            std::thread::sleep(Duration::from_secs(1));
+            if is_process_running(&process_name) {
+                process_found = true;
+                break;
+            }
+        }
+
+        if !process_found {
+            return;
+        }
+
+        // Wait for process to exit
+        loop {
+            std::thread::sleep(Duration::from_secs(5));
+            if !is_process_running(&process_name) {
+                break;
+            }
+        }
+
+        // Calculate playtime
+        let end_time = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+
+        let session_minutes = (end_time - start_time) / 60;
+
+        if session_minutes < 1 {
+            return;
+        }
+
+        // Save playtime
+        let mut playtime = get_aura_playtime();
+        let current = playtime.get(&game_id).copied().unwrap_or(0);
+        playtime.insert(game_id.clone(), current + session_minutes);
+        save_aura_playtime(&playtime);
+
+        // Notify frontend
+        app.emit("playtime-updated", game_id).ok();
+    });
+
+    true
+}
+
+fn is_process_running(process_name: &str) -> bool {
+    use std::process::Command;
+    if process_name.is_empty() {
+        return false;
+    }
+    let output = Command::new("tasklist")
+        .args(["/FI", &format!("IMAGENAME eq {}", process_name)])
+        .output();
+
+    match output {
+        Ok(out) => String::from_utf8_lossy(&out.stdout).contains(process_name),
+        Err(_) => false,
+    }
+}
 
 fn get_steam_path() -> String {
     let hklm = winreg::RegKey::predef(HKEY_LOCAL_MACHINE);
@@ -109,6 +223,32 @@ pub struct ScannedGame {
     pub process_name: String,
 }
 
+// Global playtime tracker
+static PLAYTIME_TRACKER: std::sync::Mutex<HashMap<String, u64>> = std::sync::Mutex::new(HashMap::new());
+
+#[tauri::command]
+fn get_aura_playtime() -> HashMap<String, u64> {
+    let path = dirs::data_local_dir()
+        .unwrap_or_default()
+        .join("aura")
+        .join("playtime.json");
+
+    std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|c| serde_json::from_str(&c).ok())
+        .unwrap_or_default()
+}
+
+fn save_aura_playtime(playtime: &HashMap<String, u64>) {
+    let path = dirs::data_local_dir()
+        .unwrap_or_default()
+        .join("aura")
+        .join("playtime.json");
+
+    std::fs::create_dir_all(path.parent().unwrap()).ok();
+    std::fs::write(&path, serde_json::to_string_pretty(playtime).unwrap_or_default()).ok();
+}
+
 fn parse_acf_value(content: &str, key: &str) -> Option<String> {
     let search = format!("\"{}\"", key);
     let line = content.lines().find(|l| l.trim().starts_with(&search))?;
@@ -188,10 +328,7 @@ fn scan_steam_games() -> Vec<ScannedGame> {
                 .and_then(|v| v.parse::<u64>().ok())
                 .unwrap_or(0);
 
-            let cover = format!(
-                "https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{}/header.jpg",
-                appid
-            );
+            let cover = format!("https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{}/header.jpg", appid);
 
             if games.iter().any(|g: &ScannedGame| g.id == appid) {
                 continue;
@@ -766,8 +903,8 @@ pub fn run() {
                     .build(app)?)
                 .build()?;
 
-            let icon_bytes = include_bytes!("../icons/Square30x30Logo.png");
-            let icon = tauri::image::Image::new_owned(icon_bytes.to_vec(), 30, 30);
+            let icon_bytes = include_bytes!("../icons/icon-128x128.png");
+            let icon = tauri::image::Image::new_owned(icon_bytes.to_vec(), 128, 128);
 
             let _tray = tauri::tray::TrayIconBuilder::new()
                 .icon(icon)
