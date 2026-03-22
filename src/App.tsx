@@ -10,6 +10,8 @@ import Onboarding from "./Onboarding";
 import RandomPicker from "./RandomPicker";
 import OnThisDay from "./OnThisDay";
 import UpdateModal from "./UpdateModal";
+import HeroSection from "./HeroSection";
+import QuickLaunchBar from "./QuickLaunchBar";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -18,11 +20,7 @@ import { metadataCache } from "./cache";
 import "./App.css";
 
 const VirtualGrid = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div style={{ height: "600px", overflow: "auto" }}>
-      {children}
-    </div>
-  );
+  return <div>{children}</div>;
 };
 
 function App() {
@@ -291,7 +289,7 @@ function App() {
           {/* Sidebar */}
           <aside className="sidebar">
             <div className="sidebar-logo">
-              <Gamepad2 size={28} color="#a78bfa" />
+              <Gamepad2 size={28} />
               <span>Aura</span>
             </div>
 
@@ -356,99 +354,114 @@ function App() {
           {/* Main Content */}
           <main className="main-content">
             {activePage === "stats" ? (
-              <Stats games={allGames} />
+              <div className="page-content">
+                <Stats games={allGames} />
+              </div>
             ) : activePage === "recent" ? (
-              <Recent />
+              <div className="page-content">
+                <Recent />
+              </div>
             ) : activePage === "settings" ? (
-              <Settings
-                activeTheme={theme}
-                onThemeChange={handleThemeChange}
-                localFolders={localFolders}
-                onAddFolder={(games) => {
-                  setLocalGames((prev) => [...prev, ...games]);
-                }}
-                onRemoveFolder={(folder) => {
-                  const newFolders = localFolders.filter((f) => f !== folder);
-                  setLocalFolders(newFolders);
-                  invoke("save_settings", { theme, localFolders: newFolders });
-                }}
-                onRescan={loadGames}
-              />
+              <div className="page-content">
+                <Settings
+                  activeTheme={theme}
+                  onThemeChange={handleThemeChange}
+                  localFolders={localFolders}
+                  onAddFolder={(games) => {
+                    setLocalGames((prev) => [...prev, ...games]);
+                  }}
+                  onRemoveFolder={(folder) => {
+                    const newFolders = localFolders.filter((f) => f !== folder);
+                    setLocalFolders(newFolders);
+                    invoke("save_settings", { theme, localFolders: newFolders });
+                  }}
+                  onRescan={loadGames}
+                />
+              </div>
             ) : (
-              <>
-                <div className="topbar">
-                  <h1 className="page-title">My Library</h1>
-                  <div className="topbar-right">
-                    <button onClick={addLocalFolder} className="add-folder-btn">
-                      <Gamepad2 size={16} />
-                      Add Local Folder
-                    </button>
-                    <RandomPicker games={filteredGames} />
-                    <div className="search-bar">
-                      <Search size={14} />
-                      <input
-                        type="text"
-                        placeholder="Search games..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                      />
-                    </div>
-                    <p className="game-count">{filteredGames.length} games</p>
-                  </div>
-                </div>
-
-                <OnThisDay games={allGames} />
-                <MoodPicker games={allGames} />
-                <Rediscover games={allGames} />
-
-                <div className="genre-filter">
-                  {genres.map((genre) => (
-                    <button
-                      key={genre}
-                      className={`genre-btn ${activeGenre === genre ? "active" : ""}`}
-                      onClick={() => setActiveGenre(genre)}
-                    >
-                      {genre}
-                    </button>
-                  ))}
-                </div>
-
-                <VirtualGrid>
-                  {pinnedIds.length > 0 && (
-                    <div className="pinned-section">
-                      <p className="pinned-section-title">
-                        <Pin size={11} /> Pinned
-                      </p>
-                      <div className="game-grid">
-                        {filteredGames
-                          .filter((g) => pinnedIds.includes(g.id))
-                          .map((game) => (
-                            <GameCard
-                              key={game.id}
-                              game={game}
-                              isPinned={true}
-                              onTogglePin={handleTogglePin}
-                              onUninstall={handleUninstall}
-                            />
-                          ))}
-                      </div>
-                    </div>
-                  )}
-                  <div className="game-grid">
-                    {filteredGames
-                      .filter((g) => !pinnedIds.includes(g.id))
-                      .map((game) => (
-                        <GameCard
-                          key={game.id}
-                          game={game}
-                          isPinned={false}
-                          onTogglePin={handleTogglePin}
-                          onUninstall={handleUninstall}
+              <div className="minimalist-dashboard">
+                {/* Hero Section - The nice carousel you liked */}
+                <HeroSection games={allGames} />
+                
+                {/* Quick Launch Bar - Fast access to favorites */}
+                <QuickLaunchBar games={allGames} />
+                
+                {/* Library Content */}
+                <div className="library-content">
+                  <div className="topbar">
+                    <h1 className="page-title">My Library</h1>
+                    <div className="topbar-right">
+                      <button onClick={addLocalFolder} className="add-folder-btn">
+                        <Gamepad2 size={16} />
+                        Add Local Folder
+                      </button>
+                      <RandomPicker games={filteredGames} />
+                      <div className="search-bar">
+                        <Search size={14} />
+                        <input
+                          type="text"
+                          placeholder="Search games..."
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
                         />
-                      ))}
+                      </div>
+                      <p className="game-count">{filteredGames.length} games</p>
+                    </div>
                   </div>
-                </VirtualGrid>
-              </>
+
+                  <OnThisDay games={allGames} />
+                  <MoodPicker games={allGames} />
+                  <Rediscover games={allGames} />
+
+                  <div className="genre-filter">
+                    {genres.map((genre) => (
+                      <button
+                        key={genre}
+                        className={`genre-btn ${activeGenre === genre ? "active" : ""}`}
+                        onClick={() => setActiveGenre(genre)}
+                      >
+                        {genre}
+                      </button>
+                    ))}
+                  </div>
+
+                  <VirtualGrid>
+                    {pinnedIds.length > 0 && (
+                      <div className="pinned-section">
+                        <p className="pinned-section-title">
+                          <Pin size={11} /> Pinned
+                        </p>
+                        <div className="game-grid">
+                          {filteredGames
+                            .filter((g) => pinnedIds.includes(g.id))
+                            .map((game) => (
+                              <GameCard
+                                key={game.id}
+                                game={game}
+                                isPinned={true}
+                                onTogglePin={handleTogglePin}
+                                onUninstall={handleUninstall}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="game-grid">
+                      {filteredGames
+                        .filter((g) => !pinnedIds.includes(g.id))
+                        .map((game) => (
+                          <GameCard
+                            key={game.id}
+                            game={game}
+                            isPinned={false}
+                            onTogglePin={handleTogglePin}
+                            onUninstall={handleUninstall}
+                          />
+                        ))}
+                    </div>
+                  </VirtualGrid>
+                </div>
+              </div>
             )}
           </main>
         </>
@@ -463,6 +476,5 @@ function App() {
       )}
     </div>
   );
-}
 
 export default App;

@@ -126,7 +126,7 @@ function GameCard({ game, isPinned = false, onTogglePin, onUninstall }: GameCard
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = "none";
             (e.target as HTMLImageElement).parentElement!.style.background =
-              "linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(10, 10, 20, 0.8))";
+              "linear-gradient(135deg, var(--accent-dim), rgba(10, 10, 20, 0.8))";
           }}
         />
         {!isLoaded && (

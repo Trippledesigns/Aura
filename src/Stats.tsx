@@ -40,7 +40,7 @@ function Stats({ games }: StatsProps) {
     if (stats.percentUnplayed >= 60) return { label: "Serious Backlog", emoji: "😬", color: "#fb923c" };
     if (stats.percentUnplayed >= 40) return { label: "Getting There", emoji: "😅", color: "#fbbf24" };
     if (stats.percentUnplayed >= 20) return { label: "Decent Gamer", emoji: "😊", color: "#34d399" };
-    return { label: "True Gamer", emoji: "🏆", color: "#a78bfa" };
+    return { label: "True Gamer", emoji: "🏆", color: "var(--accent)" };
   };
 
   const shame = shameLevel();
