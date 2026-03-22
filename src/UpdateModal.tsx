@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, Download, Sparkles } from "lucide-react";
-import { installUpdate, checkUpdate } from "@tauri-apps/api/updater";
+import { check } from "@tauri-apps/plugin-updater";
 import { listen } from "@tauri-apps/api/event";
 
 interface UpdateModalProps {
@@ -50,12 +50,15 @@ function UpdateModal({ version, notes, onClose }: UpdateModalProps) {
 
     // Listen for download progress
     const unlistenProgress = await listen("tauri://update-download-progress", (event) => {
-      setProgress(event.payload?.percent ?? null);
+      setProgress((event.payload as any)?.percent ?? null);
     });
 
     try {
-      // Trigger the Tauri updater
-      await installUpdate();
+      // Use Tauri's official updater API
+      const update = await check();
+      if (update?.available) {
+        await update.downloadAndInstall();
+      }
     } catch (err) {
       console.error(err);
       alert("Failed to install update: " + err);
