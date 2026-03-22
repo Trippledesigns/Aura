@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Download, Sparkles } from "lucide-react";
-import { installUpdate } from "./updater";
+import { installUpdate, checkUpdate } from "@tauri-apps/api/updater";
+import { listen } from "@tauri-apps/api/event";
 
 interface UpdateModalProps {
   version: string;
@@ -10,10 +11,59 @@ interface UpdateModalProps {
 
 function UpdateModal({ version, notes, onClose }: UpdateModalProps) {
   const [installing, setInstalling] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
+  useEffect(() => {
+    // Listen for update availability
+    const unlistenAvailable = listen("tauri://update-available", () => {
+      setUpdateAvailable(true);
+    });
+
+    const unlistenNotAvailable = listen("tauri://update-not-available", () => {
+      setUpdateAvailable(false);
+    });
+
+    const unlistenDownloadError = listen("tauri://update-download-error", (event) => {
+      console.error("Update download failed:", event.payload);
+      alert("Update download failed. Please try again.");
+      setInstalling(false);
+      setProgress(null);
+    });
+
+    const unlistenInstalled = listen("tauri://update-installed", () => {
+      alert("Update installed! The app will restart.");
+      setInstalling(false);
+      setProgress(null);
+    });
+
+    return () => {
+      unlistenAvailable.then(f => f());
+      unlistenNotAvailable.then(f => f());
+      unlistenDownloadError.then(f => f());
+      unlistenInstalled.then(f => f());
+    };
+  }, []);
 
   const handleInstall = async () => {
     setInstalling(true);
-    await installUpdate();
+
+    // Listen for download progress
+    const unlistenProgress = await listen("tauri://update-download-progress", (event) => {
+      setProgress(event.payload?.percent ?? null);
+    });
+
+    try {
+      // Trigger the Tauri updater
+      await installUpdate();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to install update: " + err);
+    } finally {
+      setInstalling(false);
+      setProgress(null);
+      unlistenProgress();
+    }
   };
 
   return (
@@ -36,6 +86,14 @@ function UpdateModal({ version, notes, onClose }: UpdateModalProps) {
               <p key={i} className="modal-note-line">{line}</p>
             ))}
           </div>
+
+          {installing && progress !== null && (
+            <p>Downloading update: {Math.round(progress * 100)}%</p>
+          )}
+
+          {!installing && updateAvailable && (
+            <p>Update is ready to install!</p>
+          )}
         </div>
 
         <div className="modal-footer">
@@ -45,7 +103,7 @@ function UpdateModal({ version, notes, onClose }: UpdateModalProps) {
           <button
             className="modal-update-btn"
             onClick={handleInstall}
-            disabled={installing}
+            disabled={installing || !updateAvailable}
           >
             <Download size={14} />
             {installing ? "Installing..." : "Update Now"}
