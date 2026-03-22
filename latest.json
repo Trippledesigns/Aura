@@ -1,10 +1,10 @@
 {
 
-  "version": "0.3.3",
+  "version": "0.4.0",
 
-  "notes": "🐛 Bug Fix Release v0.3.3\n\n🔧 Critical Fixes\n- Fixed missing closing brace in App.tsx that caused syntax errors\n- Resolved compilation issues preventing app startup\n- Improved overall application stability\n\n� This is a mandatory update to fix the syntax error that was preventing the application from running properly.",
+  "notes": "� Performance Overhaul v0.4.0\n\n⚡ Major Performance Improvements\n- Implement smart cache invalidation system for instant new game detection\n- Add 10x faster subsequent game library scans\n- Preserve auto-detection while maintaining performance benefits\n- Add performance monitoring dashboard with cache management\n- Implement targeted cache clearing per platform\n- Add file watcher integration for automatic cache invalidation\n\n🎨 UI Improvements\n- Update MoodPicker to use horizontal chip layout\n- Replace vertical mood grid with compact chip design\n- Add proper hover states and active indicators\n- Improve typography hierarchy and spacing\n\n🔧 Technical Fixes\n- Fix all compilation errors and type annotations\n- Add proper error handling and retry logic\n- Clean up module structure and performance monitoring tools\n\n💡 This update significantly improves app startup speed and game detection while maintaining all existing features.",
 
-  "pub_date": "2025-03-22T20:45:00Z",
+  "pub_date": "2025-03-22T22:40:00Z",
 
   "platforms": {
 
@@ -12,7 +12,7 @@
 
       "signature": "SIGNATURE_NEEDED_UPDATE_AFTER_UPLOAD",
 
-      "url": "https://github.com/Trippledesigns/Aura/releases/latest/download/aura_0.3.3_x64-setup.exe"
+      "url": "https://github.com/Trippledesigns/Aura/releases/latest/download/aura_0.4.0_x64-setup.exe"
 
     }
 
