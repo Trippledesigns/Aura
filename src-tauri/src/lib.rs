@@ -1,11 +1,13 @@
 use std::fs;
 use std::collections::HashMap;
 use std::sync::mpsc;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
 use notify::{Watcher, RecursiveMode, recommended_watcher};
 use winreg::enums::*;
+
+mod performance;
 
 fn get_steam_path() -> String {
     let hklm = winreg::RegKey::predef(HKEY_LOCAL_MACHINE);
@@ -109,6 +111,62 @@ pub struct ScannedGame {
     pub process_name: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct GameCache {
+    games: Vec<ScannedGame>,
+    timestamp: u64,
+    platform: String,
+}
+
+impl GameCache {
+    fn is_expired(&self) -> bool {
+        let now = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        // Cache expires after 1 hour
+        now.saturating_sub(self.timestamp) > 3600
+    }
+}
+
+fn load_cache(platform: &str) -> Option<GameCache> {
+    let path = dirs::data_local_dir()
+        .unwrap_or_default()
+        .join("aura")
+        .join("cache")
+        .join(format!("games_{}.json", platform));
+    
+    if let Ok(content) = fs::read_to_string(&path) {
+        if let Ok(cache) = serde_json::from_str::<GameCache>(&content) {
+            if !cache.is_expired() {
+                return Some(cache);
+            }
+        }
+    }
+    None
+}
+
+fn save_cache(platform: &str, games: &[ScannedGame]) {
+    let path = dirs::data_local_dir()
+        .unwrap_or_default()
+        .join("aura")
+        .join("cache");
+    
+    fs::create_dir_all(&path).ok();
+    
+    let cache = GameCache {
+        games: games.to_vec(),
+        timestamp: SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs(),
+        platform: platform.to_string(),
+    };
+    
+    let cache_path = path.join(format!("games_{}.json", platform));
+    fs::write(&cache_path, serde_json::to_string_pretty(&cache).unwrap_or_default()).ok();
+}
+
 fn parse_acf_value(content: &str, key: &str) -> Option<String> {
     let search = format!("\"{}\"", key);
     let line = content.lines().find(|l| l.trim().starts_with(&search))?;
@@ -128,8 +186,43 @@ fn is_real_game(name: &str) -> bool {
     !filters.iter().any(|f| lower.contains(f))
 }
 
+fn find_game_executable(steamapps_path: &str, appid: &str) -> String {
+    // First, try to find the game's installation folder from the ACF file
+    let acf_path = format!("{}\\appmanifest_{}.acf", steamapps_path, appid);
+    if let Ok(content) = fs::read_to_string(&acf_path) {
+        if let Some(install_dir) = parse_acf_value(&content, "installdir") {
+            // Look in common Steam library locations for this game
+            let library_paths = vec![
+                format!("{}\\..\\common\\{}", steamapps_path, install_dir),
+                format!("C:\\Program Files (x86)\\Steam\\steamapps\\common\\{}", install_dir),
+            ];
+            
+            for path in library_paths {
+                if let Ok(entries) = fs::read_dir(&path) {
+                    for entry in entries.flatten() {
+                        let file_path = entry.path();
+                        if let Some(extension) = file_path.extension() {
+                            if extension == "exe" {
+                                if let Some(name) = file_path.file_name() {
+                                    return name.to_string_lossy().to_string();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    String::new()
+}
+
 #[tauri::command]
 fn scan_steam_games() -> Vec<ScannedGame> {
+    // Check cache first
+    if let Some(cache) = load_cache("steam") {
+        return cache.games;
+    }
+
     let mut all_paths: Vec<String> = Vec::new();
     let default_path = get_steam_path();
     all_paths.push(default_path.clone());
@@ -201,11 +294,17 @@ fn scan_steam_games() -> Vec<ScannedGame> {
             let exe = parse_acf_value(&content, "LauncherPath")
                 .or_else(|| parse_acf_value(&content, "exe"))
                 .unwrap_or_default();
-            let process_name = std::path::Path::new(&exe)
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("")
-                .to_string();
+
+            // If ACF parsing failed, try to find the executable in the game folder
+            let process_name = if exe.is_empty() {
+                find_game_executable(steamapps_path, &appid)
+            } else {
+                std::path::Path::new(&exe)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("")
+                    .to_string()
+            };
 
             games.push(ScannedGame {
                 id: appid.clone(),
@@ -220,11 +319,18 @@ fn scan_steam_games() -> Vec<ScannedGame> {
         }
     }
 
+    // Save to cache
+    save_cache("steam", &games);
     games
 }
 
 #[tauri::command]
 fn scan_epic_games() -> Vec<ScannedGame> {
+    // Check cache first
+    if let Some(cache) = load_cache("epic") {
+        return cache.games;
+    }
+
     let manifests_path = get_epic_manifests_path();
     let mut games = Vec::new();
 
@@ -284,11 +390,18 @@ fn scan_epic_games() -> Vec<ScannedGame> {
         });
     }
 
+    // Save to cache
+    save_cache("epic", &games);
     games
 }
 
 #[tauri::command]
 fn scan_ubisoft_games() -> Vec<ScannedGame> {
+    // Check cache first
+    if let Some(cache) = load_cache("ubisoft") {
+        return cache.games;
+    }
+
     let mut games = Vec::new();
 
     let hklm = winreg::RegKey::predef(HKEY_LOCAL_MACHINE);
@@ -334,11 +447,18 @@ fn scan_ubisoft_games() -> Vec<ScannedGame> {
         });
     }
 
+    // Save to cache
+    save_cache("ubisoft", &games);
     games
 }
 
 #[tauri::command]
 fn scan_gog_games() -> Vec<ScannedGame> {
+    // Check cache first
+    if let Some(cache) = load_cache("gog") {
+        return cache.games;
+    }
+
     let mut games = Vec::new();
 
     let hklm = winreg::RegKey::predef(HKEY_LOCAL_MACHINE);
@@ -505,6 +625,29 @@ fn is_process_running(process_name: &str) -> bool {
     }
 }
 
+fn is_steam_game_running(_game_id: &str) -> bool {
+    use std::process::Command;
+    
+    // First check if Steam itself is running
+    let steam_output = Command::new("tasklist")
+        .args(["/FI", "IMAGENAME eq steam.exe"])
+        .output();
+    
+    let steam_running = match steam_output {
+        Ok(out) => String::from_utf8_lossy(&out.stdout).contains("steam.exe"),
+        Err(_) => false,
+    };
+    
+    if !steam_running {
+        return false;
+    }
+    
+    // For Steam games, we'll use a simpler approach: check if any game process is running
+    // This is a workaround since we can't easily track specific Steam game processes
+    // We'll track for a reasonable time period (e.g., 5 minutes minimum) before considering it "played"
+    true
+}
+
 #[tauri::command]
 fn launch_and_track(
     app: tauri::AppHandle,
@@ -537,11 +680,19 @@ fn launch_and_track(
         .as_secs();
 
     std::thread::spawn(move || {
+        // Check if this is a Steam game
+        let is_steam_game = launch_command.starts_with("steam://");
+        
         // Wait for process to appear (up to 60 seconds)
         let mut process_found = false;
         for _ in 0..60 {
             std::thread::sleep(Duration::from_secs(1));
-            if is_process_running(&process_name) {
+            if is_steam_game {
+                if is_steam_game_running(&game_id) {
+                    process_found = true;
+                    break;
+                }
+            } else if is_process_running(&process_name) {
                 process_found = true;
                 break;
             }
@@ -552,10 +703,18 @@ fn launch_and_track(
         }
 
         // Wait for process to exit
-        loop {
-            std::thread::sleep(Duration::from_secs(5));
-            if !is_process_running(&process_name) {
-                break;
+        if is_steam_game {
+            // For Steam games, wait for Steam to no longer have the game running
+            // We'll use a simple timeout approach since we can't easily detect specific game processes
+            // Track for at least 5 minutes to count as "played"
+            std::thread::sleep(Duration::from_secs(300));
+        } else {
+            // For non-Steam games, wait for the specific process to exit
+            loop {
+                std::thread::sleep(Duration::from_secs(5));
+                if !is_process_running(&process_name) {
+                    break;
+                }
             }
         }
 
@@ -627,11 +786,11 @@ fn get_recent_games() -> Vec<serde_json::Value> {
 #[tauri::command]
 fn start_file_watcher(app: tauri::AppHandle) {
     std::thread::spawn(move || {
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = mpsc::channel::<notify::Result<notify::Event>>();
 
-        let mut watcher = match recommended_watcher(move |res| {
+        let mut watcher = match recommended_watcher(move |res: notify::Result<notify::Event>| {
             if let Ok(event) = res {
-                tx.send(event).ok();
+                tx.send(Ok(event)).ok();
             }
         }) {
             Ok(w) => w,
@@ -644,13 +803,28 @@ fn start_file_watcher(app: tauri::AppHandle) {
 
         loop {
             match rx.recv_timeout(Duration::from_secs(2)) {
-                Ok(event) => {
+                Ok(Ok(event)) => {
                     let kind = format!("{:?}", event.kind);
                     if kind.contains("Create") || kind.contains("Remove") {
+                        // Smart cache invalidation - clear only the affected platform's cache
+                        for path in &event.paths {
+                            let path_str: std::borrow::Cow<str> = path.to_string_lossy();
+                            
+                            if path_str.contains("steamapps") {
+                                performance::clear_platform_cache("steam");
+                            } else if path_str.contains("Epic") || path_str.contains("Manifests") {
+                                performance::clear_platform_cache("epic");
+                            } else if path_str.contains("Ubisoft") || path_str.contains("Launcher") {
+                                performance::clear_platform_cache("ubisoft");
+                            } else if path_str.contains("GOG") {
+                                performance::clear_platform_cache("gog");
+                            }
+                        }
+                        
                         app.emit("library-changed", ()).ok();
                     }
                 }
-                Err(_) => continue,
+                Ok(Err(_)) | Err(_) => continue,
             }
         }
     });

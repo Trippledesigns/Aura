@@ -59,17 +59,19 @@ function MoodPicker({ games }: MoodPickerProps) {
         </div>
       </div>
 
-      {/* Mood Selection */}
-      <div className="mood-grid">
+      {/* Mood chips — horizontal, compact */}
+      <div className="mood-chips">
         {MOODS.map((mood) => (
           <button
             key={mood.label}
-            className={`mood-option ${selectedMood?.label === mood.label ? "active" : ""}`}
+            className={`mood-chip ${selectedMood?.label === mood.label ? "active" : ""}`}
             onClick={() => { setSelectedMood(mood); setSuggestion(null); }}
           >
-            <span className="mood-option-emoji">{mood.emoji}</span>
-            <span className="mood-option-label">{mood.label}</span>
-            <span className="mood-option-desc">{mood.description}</span>
+            <span className="mood-chip-emoji">{mood.emoji}</span>
+            <div className="mood-chip-info">
+              <span className="mood-chip-label">{mood.label}</span>
+              <span className="mood-chip-desc">{mood.description}</span>
+            </div>
           </button>
         ))}
       </div>
